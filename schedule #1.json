@@ -1,0 +1,983 @@
+{
+  "name": "schedule #1",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1008,
+        -112
+      ],
+      "id": "373fbf68-55ce-4a0d-8158-4952b62baffe",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1jWv8pWm6B2ltxBEnDUoPn5pfAKbyJ9BNacNdRpZovf0",
+          "mode": "list",
+          "cachedResultName": "Mentors DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jWv8pWm6B2ltxBEnDUoPn5pfAKbyJ9BNacNdRpZovf0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jWv8pWm6B2ltxBEnDUoPn5pfAKbyJ9BNacNdRpZovf0/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -720,
+        176
+      ],
+      "id": "b0db47cc-b004-42c1-99c2-57f7a83cdabf",
+      "name": "Mentors DB",
+      "alwaysOutputData": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7a5eXpWxsV9jjAnz",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -464,
+        48
+      ],
+      "id": "a0777e09-50c7-4413-bdcc-85a7063d8ce8",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1elqNEh4hZKPDA5rmLvZk1vcJ99Pe_X0pKfGE1mAozFk",
+          "mode": "list",
+          "cachedResultName": "Demo Sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1elqNEh4hZKPDA5rmLvZk1vcJ99Pe_X0pKfGE1mAozFk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1elqNEh4hZKPDA5rmLvZk1vcJ99Pe_X0pKfGE1mAozFk/edit#gid=0"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "detectAutomatically"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -720,
+        -48
+      ],
+      "id": "b1b708bb-da07-4824-905d-cd5ea9bb37b1",
+      "name": "Demo Schedule",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7a5eXpWxsV9jjAnz",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Map columns to time slots\nlet rowHeaders = {\n  col_5: \"8:30-9:30\",\n  col_6: \"9:30-10:30\",\n  col_7: \"10:30-11:30\",\n  col_8: \"12:30-13:30\",\n  col_9: \"13:30-14:30\",\n  col_10: \"14:30-15:30\",\n  col_11: \"15:30-16:30\"\n};\n\n// Separate timetable rows and mentor DB\nlet timetableRows = [];\nlet mentorNames = [];\n\nfor (let item of items) {\n    if (item.json[\"Mentors Name\"]) {\n        mentorNames.push(item.json[\"Mentors Name\"].trim());\n    } else {\n        // Skip header rows (those that don't have a hall or a section)\n        if (!item.json[\"col_2\"] || !item.json[\"Friday\"]) continue;\n        timetableRows.push(item.json);\n    }\n}\n\nlet output = [];\n\nfor (let row of timetableRows) {\n    let section = row[\"Friday\"];\n    let batch = row[\"17 October 2025\"] || \"\";\n    let hall = row[\"col_2\"];\n    let timeSlots = [\"col_5\",\"col_6\",\"col_7\",\"col_8\",\"col_9\",\"col_10\",\"col_11\"];\n\n    for (let col of timeSlots) {\n        let cell = row[col];\n        if (!cell || cell.toUpperCase() === \"LUNCH\") continue;\n\n        // Split by space and match against Mentor DB\n        let words = cell.split(/\\s+/);\n        let className = words.filter(w => !mentorNames.includes(w)).join(\" \");\n        let mentors = words.filter(w => mentorNames.includes(w)).join(\" \");\n\n        output.push({\n            day: \"Friday\",            \n            date: \"17 October 2025\",  \n            section: section,\n            batch: batch,\n            hall: hall,\n            time_slot: rowHeaders[col],\n            class_name: className,\n            mentor_name: mentors\n        });\n    }\n}\n\nreturn output.map(item => ({ json: item }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -304,
+        48
+      ],
+      "id": "b3e4d8af-4b9d-4b75-89e5-461c5465ca9c",
+      "name": "Structure the Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "// input items from previous node (Supabase or Google Sheet)\nconst timetableData = $input.all();  \n\n// create an object to hold classes grouped by mentor\nlet mentorsSchedule = {};\n\n// iterate through each row\nfor (let i = 0; i < timetableData.length; i++) {\n    const item = timetableData[i].json;\n    \n    // skip rows without a mentor\n    if (!item.mentor_name || item.mentor_name.trim() === \"\") continue;\n    \n    // if mentor doesn't exist yet in the object, create an array for them\n    if (!mentorsSchedule[item.mentor_name]) {\n        mentorsSchedule[item.mentor_name] = [];\n    }\n    \n    // push class details for this mentor\n    mentorsSchedule[item.mentor_name].push({\n        date: item.date,\n        day: item.day,\n        section: item.section,\n        batch: item.batch,\n        hall: item.hall,\n        timeslot: item.timeslot,\n        class_name: item.class_name\n    });\n}\n\n// now prepare output for each mentor\nlet output = [];\nfor (const mentor in mentorsSchedule) {\n    output.push({\n        json: {\n            mentor_name: mentor,\n            classes: mentorsSchedule[mentor]  // array of class details\n        }\n    });\n}\n\n// return output\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        48
+      ],
+      "id": "db3799c9-7c1a-4a6d-a694-82444ce65b94",
+      "name": "Individual Mentor Details"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1kJUgl77Ac8QDYt3UEQEpYnXuEO0fVoE4Bwb4tvY8EPo/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1kJUgl77Ac8QDYt3UEQEpYnXuEO0fVoE4Bwb4tvY8EPo/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $json.date }}",
+            "Day": "={{ $json.day }}",
+            "Section": "={{ $json.section }}",
+            "Batch": "={{ $json.batch }}",
+            "Hall": "={{ $json.hall }}",
+            "Time ": "={{ $json.timeslot }}",
+            "Class Name": "={{ $json.class_name }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Day",
+              "displayName": "Day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Section",
+              "displayName": "Section",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Batch",
+              "displayName": "Batch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Hall",
+              "displayName": "Hall",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Time ",
+              "displayName": "Time ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Class Name",
+              "displayName": "Class Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        -96
+      ],
+      "id": "39f57ec6-c77a-4077-aae2-321c33abad98",
+      "name": "John",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7a5eXpWxsV9jjAnz",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1JiOO-TuDDcNV0pP7kS1ggE11k9aMm-TRC0LhqOAh13M/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JiOO-TuDDcNV0pP7kS1ggE11k9aMm-TRC0LhqOAh13M/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $json.date }}",
+            "Day": "={{ $json.day }}",
+            "Section": "={{ $json.section }}",
+            "Batch": "={{ $json.batch }}",
+            "Hall": "={{ $json.hall }}",
+            "Time ": "={{ $json.timeslot }}",
+            "Class Name": "={{ $json.class_name }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Day",
+              "displayName": "Day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Section",
+              "displayName": "Section",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Batch",
+              "displayName": "Batch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Hall",
+              "displayName": "Hall",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Time ",
+              "displayName": "Time ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Class Name",
+              "displayName": "Class Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        48
+      ],
+      "id": "a8879ccb-6497-49d6-9da8-aa56a964520e",
+      "name": "Alice",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7a5eXpWxsV9jjAnz",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ac9b4a9b-38c7-48c1-a756-b5f6e06393e5",
+                    "leftValue": "={{ $json.mentor_name }}",
+                    "rightValue": "=John",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ec6fe7bf-96f5-481f-8d8d-1b94c726c437",
+                    "leftValue": "={{ $json.mentor_name }}",
+                    "rightValue": "Alice",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "fdd93686-2cd8-45f7-acb8-1667878c703b",
+                    "leftValue": "={{ $json.mentor_name }}",
+                    "rightValue": "Nick",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        384,
+        32
+      ],
+      "id": "bc8ba4ac-2d3b-4859-9067-3b722170795f",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1teRrk8toJGB4EyYNyl9NCV7yTSfSjjNXeqQVJTyFEog/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1teRrk8toJGB4EyYNyl9NCV7yTSfSjjNXeqQVJTyFEog/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $json.date }}",
+            "Day": "={{ $json.day }}",
+            "Section": "={{ $json.section }}",
+            "Batch": "={{ $json.batch }}",
+            "Hall": "={{ $json.hall }}",
+            "Time ": "={{ $json.timeslot }}",
+            "Class Name": "={{ $json.class_name }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Day",
+              "displayName": "Day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Section",
+              "displayName": "Section",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Batch",
+              "displayName": "Batch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hall",
+              "displayName": "Hall",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Time ",
+              "displayName": "Time ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Class Name",
+              "displayName": "Class Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        208
+      ],
+      "id": "55facb3a-2e90-41e1-b476-d25c262de5fe",
+      "name": "Nick",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7a5eXpWxsV9jjAnz",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Unstructured Sheet to Structured DB",
+        "height": 80,
+        "width": 448
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -608,
+        944
+      ],
+      "id": "06e255d0-bfae-4921-90a7-011e51138d11",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1008,
+        64
+      ],
+      "id": "cdd4d935-5111-41c1-8935-0b50fcfacdea",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.all();\nlet flattened = [];\n\nfor (const mentor of input) {\n  const mentorName = mentor.json.mentor_name;\n  const classes = mentor.json.classes;\n\n  for (const c of classes) {\n    flattened.push({\n      json: {\n        mentor_name: mentorName,\n        date: c.date,\n        day: c.day,\n        section: c.section,\n        batch: c.batch,\n        hall: c.hall,\n        timeslot: c.timeslot,\n        class_name: c.class_name\n      }\n    });\n  }\n}\n\nreturn flattened;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        48
+      ],
+      "id": "19e9fc7b-6b21-4ed2-886e-379d90da3223",
+      "name": "Flatten the Data"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "mentor_name"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        1504
+      ],
+      "id": "c6e55698-4c6f-4b06-ac79-dbed00ddc8f7",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "jsCode": "// get all mentor names\nconst mentors = $input.first().json.mentor_name;\n\n// remove duplicates\nconst uniqueMentors = [...new Set(mentors)];\n\n// return one item per mentor\nreturn uniqueMentors.map(name => ({ json: { mentor_name: name } }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        1504
+      ],
+      "id": "675f70ff-3c80-4c87-b4e6-e704c5479ac4",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6563d457-232d-49c2-b819-828adb2a1699",
+              "leftValue": "={{$json[\"files\"].length}}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        192,
+        1504
+      ],
+      "id": "aac4d93d-e004-4de9-a2ce-89f9837f631c",
+      "name": "If",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "=name contains \"{{ $json.mentor_name }}\" and trashed = false",
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1JTNT3DN75S8uGlX5379Yv7q3XduJHaTF",
+            "mode": "list",
+            "cachedResultName": "mentors sheets",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1JTNT3DN75S8uGlX5379Yv7q3XduJHaTF"
+          },
+          "whatToSearch": "files",
+          "fileTypes": [
+            "application/vnd.google-apps.spreadsheet"
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -176,
+        1504
+      ],
+      "id": "90798179-a635-4c34-b2c0-f5d072d2f2d5",
+      "name": "Search files and folders",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "4QIGl26Qncq9Hphg",
+          "name": "Google Drive account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ensure there's always a 'files' array\nconst searchResult = $input.all()[0].json;\nreturn [\n  {\n    json: {\n      files: searchResult && searchResult.files ? searchResult.files : []\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        1504
+      ],
+      "id": "48d79464-dbea-40fc-821d-8a2056e6928d",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "tableId": "timetable",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "date",
+              "fieldValue": "={{ $json.date }}"
+            },
+            {
+              "fieldId": "day",
+              "fieldValue": "={{ $json.day }}"
+            },
+            {
+              "fieldId": "section",
+              "fieldValue": "={{ $json.section }}"
+            },
+            {
+              "fieldId": "batch",
+              "fieldValue": "={{ $json.batch }}"
+            },
+            {
+              "fieldId": "hall",
+              "fieldValue": "={{ $json.hall }}"
+            },
+            {
+              "fieldId": "timeslot",
+              "fieldValue": "={{ $json.time_slot }}"
+            },
+            {
+              "fieldId": "class_name",
+              "fieldValue": "={{ $json.class_name }}"
+            },
+            {
+              "fieldId": "mentor_name",
+              "fieldValue": "={{ $json.mentor_name }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        48
+      ],
+      "id": "117c76a7-b157-43ba-9661-2bb810cc5321",
+      "name": "Structured Table",
+      "credentials": {
+        "supabaseApi": {
+          "id": "pDIRwgVRqkWKRlLw",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        []
+      ]
+    },
+    "Mentors DB": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Structure the Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demo Schedule": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structure the Data": {
+      "main": [
+        [
+          {
+            "node": "Structured Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Individual Mentor Details": {
+      "main": [
+        [
+          {
+            "node": "Flatten the Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alice": {
+      "main": [
+        []
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "John",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alice",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Nick",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Demo Schedule",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Mentors DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "John": {
+      "main": [
+        []
+      ]
+    },
+    "Nick": {
+      "main": [
+        []
+      ]
+    },
+    "Flatten the Data": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search files and folders": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [],
+        []
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Table": {
+      "main": [
+        [
+          {
+            "node": "Individual Mentor Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "950a6ec0-9e04-42c5-9f00-29f16e12bebf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "634b9eb8253ba72c6d98b47568a1ace429ea8d4d2818ee0bfbd32b6c02492fa6"
+  },
+  "id": "2tDG3UmZdMANjgcr",
+  "tags": []
+}
