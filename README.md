@@ -1,7 +1,6 @@
-# sheet_management_system
+### Sheet Management System
 
-
-This n8n workflow, named "schedule #1," automates the process of reading an unstructured class schedule and distributing personalized timetables to individual mentors.
+This n8n workflow automates the process of reading an unstructured class schedule and distributing personalized timetables to individual mentors.
 
 ***
 
